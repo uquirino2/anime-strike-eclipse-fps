@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ANIME STRIKE: ECLIPSE PROTOCOL — 3D Tactical Hero FPS (5v5 & Campanha)</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Three.js 3D Engine & PeerJS WebRTC P2P Multiplayer -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body>
+
+  <!-- 3D WebGL Viewport -->
+  <div id="game-canvas-container"></div>
+
+  <!-- Screen Vignettes & Sniper Scope -->
+  <div id="screen-fx-layer">
+    <div id="fx-damage-vignette" class="fx-damage-vignette"></div>
+    <div id="fx-heal-vignette" class="fx-heal-vignette"></div>
+    <div id="fx-ult-vignette" class="fx-ult-vignette"></div>
+    <div id="fx-sniper-scope" class="fx-sniper-scope"></div>
+  </div>
+
+  <!-- Floating Anime Damage Numbers -->
+  <div id="damage-numbers-layer"></div>
+
+  <!-- ======================== MAIN MENU OVERLAY ======================== -->
+  <div id="main-menu-overlay" class="overlay-screen">
+    <header class="menu-topbar">
+      <div class="brand-logo">
+        <div class="brand-emblem">AE</div>
+        <div>
+          <div class="brand-title">ANIME STRIKE: ECLIPSE</div>
+          <div class="brand-subtitle">3D Tactical Hero FPS • 5v5 Online & Campanha</div>
+        </div>
+      </div>
+
+      <nav class="menu-tabs">
+        <button class="nav-tab-btn active" data-tab="tab-play">JOGAR</button>
+        <button class="nav-tab-btn" data-tab="tab-multiplayer">HOST / ONLINE 5v5</button>
+        <button class="nav-tab-btn" data-tab="tab-campaign">CAMPANHA (5 MAPAS)</button>
+        <button class="nav-tab-btn" data-tab="tab-heroes">6 HERÓIS</button>
+        <button class="nav-tab-btn" data-tab="tab-settings">MIRA & CONFIG</button>
+      </nav>
+
+      <div class="player-badge">
+        <span style="font-size:12px;color:#05d5fa;font-weight:700;">AGENTE:</span>
+        <input id="player-name-input" type="text" value="Agente_Aegis" maxlength="18" />
+        <span id="controller-status-pill" class="controller-pill">⌨️ Teclado / 🎮 Controle</span>
+      </div>
+    </header>
+
+    <!-- TAB 1: QUICK PLAY & 3D HERO SHOWCASE -->
+    <main id="tab-play" class="menu-content-area menu-tab-pane">
+      <div class="menu-left-column">
+        <div class="menu-section-title">SELECIONE O MODO DE OPERAÇÃO</div>
+
+        <div class="mode-card" onclick="window.GAME.startMatch('tactical_5v5', document.getElementById('quick-map-select').value)">
+          <div class="mode-tag">COMPETITIVO • ESTILO VALORANT / CS2</div>
+          <h3>OPERACÃO 5v5 TÁTICO (SPIKE)</h3>
+          <p>Ataque vs Defesa em rodadas com Economia, Loja de Armas [B], Plant/Defuse de Spike [F], Precisão de Tiro e Bots IA ou Amigos Online.</p>
+        </div>
+
+        <div class="mode-card" onclick="window.GAME.startMatch('arena_5v5', document.getElementById('quick-map-select').value)">
+          <div class="mode-tag">AÇÃO RÁPIDA • ESTILO OVERWATCH</div>
+          <h3>ARENA 5v5 HERO CLASH</h3>
+          <p>Combate 5v5 frenético com renascimento automático, recargas de poderes aceleradas e batalhas de Ultimates.</p>
+        </div>
+
+        <div class="mode-card" onclick="window.GAME.launchCampaignChapter(0)">
+          <div class="mode-tag">HISTÓRIA IMERSIVA • 5 MAPAS SEMI-ABERTOS</div>
+          <h3>CAMPANHA: CRÔNICAS DO ECLIPSE</h3>
+          <p>Explore 5 vastos setores semi-abertos (Neo-Shibuya, Kyoto, Geleira Valquíria, Ruínas Solaris e Cidadela Orbital), hackeie terminais e derrote Chefes!</p>
+        </div>
+
+        <div class="mode-card" onclick="window.GAME.startMatch('tutorial', 'neo_shibuya')">
+          <div class="mode-tag">TREINAMENTO GUIADO • ACADEMIA AEGIS</div>
+          <h3>TUTORIAL INTERATIVO & ESTANDE</h3>
+          <p>Aprenda passo a passo movimentação, controle de recuo, Headshots, Loja Tática, Poderes [Q/E/C/X] e operação da Spike.</p>
+        </div>
+
+        <div class="mp-box" style="background:rgba(10,15,32,0.88);padding:12px;border-radius:6px;border:1px solid rgba(5,213,250,0.3);">
+          <label>MAPA PARA PARTIDA RÁPIDA (5 MAPAS DISPONÍVEIS):</label>
+          <select id="quick-map-select" class="mp-select">
+            <option value="neo_shibuya">1. Distrito Neo-Shibuya (Cyberpunk Metropolis)</option>
+            <option value="kyoto_shrine">2. Santuário Flutuante de Kyoto (Templo & Sakura)</option>
+            <option value="valkyrie_glacier">3. Base Glacial Valquíria (Complexo Ártico)</option>
+            <option value="solaris_ruins">4. Ruínas de Aethelgard (Deserto de Mechas)</option>
+            <option value="eclipse_orbital">5. Cidadela Orbital Eclipse (Estação Espacial)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Center/Right Live 3D Anime Hero Showcase -->
+      <div class="menu-center-showcase">
+        <div class="hero-showcase-banner">
+          <div>
+            <div id="showcase-hero-name" class="hero-showcase-name">AKIRA — Cyber Ronin</div>
+            <div id="showcase-hero-role" class="hero-showcase-role">DUELISTA | HP 100 + ESCUDO 50</div>
+          </div>
+          <div id="showcase-hero-jp" class="hero-JP-watermark">明・斬閃</div>
+        </div>
+
+        <div id="showcase-abilities-strip" class="hero-abilities-strip"></div>
+        <div id="hero-selector-dock" class="hero-selector-dock"></div>
+      </div>
+    </main>
+
+    <!-- TAB 2: ONLINE 5v5 HOST / JOIN LOBBY -->
+    <main id="tab-multiplayer" class="menu-content-area menu-tab-pane hidden">
+      <div class="subpanel-container">
+        <div class="panel-header-row">
+          <div>
+            <h2>LOBBY MULTIPLAYER ONLINE 5v5 (HOST P2P & BOTS IA)</h2>
+            <p id="mp-status-text" style="font-size:13.5px;color:#00f59b;">Pronto para criar sala Host ou conectar ao código de um colega.</p>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn-anime secondary" onclick="window.NETWORK.switchMyTeam()">TROCAR DE TIME</button>
+            <button class="btn-anime green" onclick="window.NETWORK.hostStartMatch()">⚔️ INICIAR PARTIDA 5v5</button>
+          </div>
+        </div>
+
+        <div class="mp-controls-bar">
+          <div class="mp-box">
+            <label>CRIAR SALA HOST (COMPARTILHE COM COLEGAS)</label>
+            <div class="mp-input-group">
+              <input id="mp-room-code-display" class="mp-input" type="text" readonly value="LOCAL-5V5" />
+              <button class="btn-anime" onclick="window.NETWORK.hostRoom(window.SETTINGS.config.playerName, window.GAME.selectedHeroId)">CRIAR HOST</button>
+              <button class="btn-anime secondary" onclick="window.GAME.copyInviteLink()">LINK</button>
+            </div>
+          </div>
+
+          <div class="mp-box">
+            <label>ENTRAR NA SALA DE UM COLEGA (CÓDIGO)</label>
+            <div class="mp-input-group">
+              <input id="mp-join-code-input" class="mp-input" type="text" placeholder="Ex: K9X4B" />
+              <button class="btn-anime secondary" onclick="window.NETWORK.joinRoom(document.getElementById('mp-join-code-input').value, window.SETTINGS.config.playerName, window.GAME.selectedHeroId)">CONECTAR</button>
+            </div>
+          </div>
+
+          <div class="mp-box">
+            <label>MAPA E MODO DA SALA 5v5</label>
+            <div class="mp-input-group">
+              <select class="mp-select" onchange="window.NETWORK.matchConfig.mapId = this.value; window.NETWORK.broadcastLobbyState();">
+                <option value="neo_shibuya">Mapa 1: Neo-Shibuya</option>
+                <option value="kyoto_shrine">Mapa 2: Santuário Kyoto</option>
+                <option value="valkyrie_glacier">Mapa 3: Base Glacial</option>
+                <option value="solaris_ruins">Mapa 4: Ruínas Aethelgard</option>
+                <option value="eclipse_orbital">Mapa 5: Cidadela Orbital</option>
+              </select>
+              <select class="mp-select" onchange="window.NETWORK.matchConfig.gameMode = this.value; window.NETWORK.broadcastLobbyState();">
+                <option value="tactical_5v5">5v5 Tático (Spike)</option>
+                <option value="arena_5v5">5v5 Arena (Respawn)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mp-box">
+            <label>CONFIGURAÇÃO DE BOTS IA (COMPLETAR 5v5)</label>
+            <div class="mp-input-group">
+              <select class="mp-select" onchange="window.NETWORK.setBotsEnabled(this.value === 'on')">
+                <option value="on">Incluir Bots nas vagas (5v5 Cheio)</option>
+                <option value="off">Apenas Jogadores Humanos</option>
+              </select>
+              <select class="mp-select" onchange="window.NETWORK.matchConfig.botDifficulty = this.value; window.NETWORK.broadcastLobbyState();">
+                <option value="medium">IA: Médio</option>
+                <option value="easy">IA: Fácil</option>
+                <option value="hard">IA: Difícil / Pro</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5v5 Teams Roster -->
+        <div class="teams-5v5-grid">
+          <div class="team-column alpha">
+            <div class="team-header" style="color:#05d5fa;">
+              <span>ESQUADRÃO ALFA (ATACANTES)</span>
+              <span>5 SLOTS</span>
+            </div>
+            <div id="lobby-team-alpha" class="slot-list"></div>
+          </div>
+
+          <div class="vs-divider">5v5<br>VS</div>
+
+          <div class="team-column omega">
+            <div class="team-header" style="color:#ff2a6d;">
+              <span>ESQUADRÃO OMEGA (DEFENSORES)</span>
+              <span>5 SLOTS</span>
+            </div>
+            <div id="lobby-team-omega" class="slot-list"></div>
+          </div>
+        </div>
+
+        <!-- Chat do Lobby -->
+        <div class="mp-box">
+          <label>CHAT DO ESQUADRÃO ONLINE</label>
+          <div id="mp-chat-log" style="height:85px;overflow-y:auto;background:rgba(0,0,0,0.45);padding:8px 12px;border-radius:4px;font-size:13px;border:1px solid rgba(255,255,255,0.08);">
+            <div><b style="color:#ffd166;">SISTEMA:</b> Crie uma sala Host e envie o Código ou Link para seus colegas jogarem juntos!</div>
+          </div>
+          <div class="mp-input-group">
+            <input id="mp-chat-input" class="mp-input" type="text" placeholder="Digite uma mensagem para o lobby..." onkeydown="if(event.key==='Enter'){window.NETWORK.sendChat(window.SETTINGS.config.playerName, this.value);this.value='';}" />
+            <button class="btn-anime secondary" onclick="const inp=document.getElementById('mp-chat-input');if(inp.value){window.NETWORK.sendChat(window.SETTINGS.config.playerName, inp.value);inp.value='';}">ENVIAR</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- TAB 3: SEMI-OPEN WORLD CAMPAIGN (5 MAPS) -->
+    <main id="tab-campaign" class="menu-content-area menu-tab-pane hidden">
+      <div class="subpanel-container">
+        <div class="panel-header-row">
+          <div>
+            <h2>MODO CAMPANHA: CRÔNICAS DO ECLIPSE NEON (MUNDO SEMI-ABERTO)</h2>
+            <p style="font-size:14px;color:#8b9bb4;">Explore 5 setores semi-abertos interconectados, hackeie relés de segurança, enfrente patrulhas e derrote os 5 Chefes da Corporação Eclipse.</p>
+          </div>
+        </div>
+        <div id="campaign-chapters-grid" class="campaign-chapters-grid"></div>
+      </div>
+    </main>
+
+    <!-- TAB 4: 6 HEROES DOSSIER -->
+    <main id="tab-heroes" class="menu-content-area menu-tab-pane hidden">
+      <div class="subpanel-container">
+        <div class="panel-header-row">
+          <div>
+            <h2>ELENCO DE 6 HERÓIS TÁTICOS ANIME</h2>
+            <p style="font-size:14px;color:#8b9bb4;">Cada herói possui atributos únicos, arma assinatura, 3 habilidades táticas [Q, E, C] e uma Ultimate [X].</p>
+          </div>
+        </div>
+        <div id="heroes-full-roster-grid" class="campaign-chapters-grid"></div>
+      </div>
+    </main>
+
+    <!-- TAB 5: CROSSHAIR STUDIO, SENSITIVITY & CONTROLLER SETTINGS -->
+    <main id="tab-settings" class="menu-content-area menu-tab-pane hidden">
+      <div class="subpanel-container">
+        <div class="panel-header-row">
+          <h2>ESTÚDIO DE MIRA (CROSSHAIR), SENSIBILIDADE & CONTROLES</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-anime secondary" onclick="window.SETTINGS.applyPreset('valorant_pro')">Preset Valorant Pro</button>
+            <button class="btn-anime secondary" onclick="window.SETTINGS.applyPreset('cs2_classic')">Preset CS2 Classic</button>
+            <button class="btn-anime secondary" onclick="window.SETTINGS.applyPreset('anime_star')">Preset Anime Star</button>
+            <button class="btn-anime secondary" onclick="window.SETTINGS.applyPreset('dot_only')">Preset Ponto Fino</button>
+          </div>
+        </div>
+
+        <div class="settings-grid">
+          <!-- Left: Live Crosshair Preview & Reticle Controls -->
+          <div class="crosshair-studio-box">
+            <label style="font-family:var(--font-display);font-size:13px;color:#05d5fa;">PRÉVIA DA MIRA EM TEMPO REAL</label>
+            <canvas id="crosshair-preview-canvas" width="320" height="190"></canvas>
+
+            <div class="setting-row">
+              <div class="setting-row-header"><span>Cor da Mira</span></div>
+              <input id="set-ch-color" type="color" value="#00f59b" style="width:100%;height:34px;cursor:pointer;" />
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-row-header"><span>Tamanho do Ponto Central</span><span id="val-ch-dot">3</span></div>
+              <input id="set-ch-dot-size" type="range" min="1" max="10" step="1" value="3" />
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-row-header"><span>Comprimento das Linhas</span><span id="val-ch-len">9</span></div>
+              <input id="set-ch-length" type="range" min="0" max="24" step="1" value="9" />
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-row-header"><span>Espessura das Linhas</span><span id="val-ch-thick">2</span></div>
+              <input id="set-ch-thick" type="range" min="1" max="8" step="1" value="2" />
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-row-header"><span>Abertura Central (Gap)</span><span id="val-ch-gap">5</span></div>
+              <input id="set-ch-gap" type="range" min="0" max="20" step="1" value="5" />
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;margin-top:4px;">
+              <label><input id="set-ch-dot" type="checkbox" checked /> Ponto Central</label>
+              <label><input id="set-ch-outer" type="checkbox" /> Linhas Externas</label>
+              <label><input id="set-ch-outline" type="checkbox" checked /> Contorno Preto</label>
+              <label><input id="set-ch-dynamic" type="checkbox" checked /> Mira Dinâmica</label>
+            </div>
+          </div>
+
+          <!-- Right: Sensitivity, Gamepad & Video/Audio Sliders -->
+          <div class="settings-sliders-column">
+            <div class="settings-group">
+              <h3>🖱️ SENSIBILIDADE DO MOUSE & MIRA</h3>
+              <div class="setting-row">
+                <div class="setting-row-header"><span>Sensibilidade Geral (Mouse)</span><span id="val-mouse-sens">1.0</span></div>
+                <input id="set-mouse-sens" type="range" min="0.1" max="4.0" step="0.05" value="1.0" />
+              </div>
+              <div class="setting-row">
+                <div class="setting-row-header"><span>Multiplicador Mira Scoped (ADS)</span><span id="val-ads-sens">0.65</span></div>
+                <input id="set-ads-sens" type="range" min="0.2" max="1.5" step="0.05" value="0.65" />
+              </div>
+              <label style="font-size:13.5px;margin-top:6px;"><input id="set-invert-y" type="checkbox" /> Inverter Eixo Vertical (Y)</label>
+            </div>
+
+            <div class="settings-group">
+              <h3>🎮 CONTROLE / GAMEPAD (XBOX & PLAYSTATION)</h3>
+              <div class="setting-row">
+                <div class="setting-row-header"><span>Sensibilidade do Analógico</span><span id="val-pad-sens">2.2</span></div>
+                <input id="set-pad-sens" type="range" min="0.5" max="5.0" step="0.1" value="2.2" />
+              </div>
+              <div class="setting-row">
+                <div class="setting-row-header"><span>Zona Morta (Deadzone)</span><span id="val-pad-deadzone">0.12</span></div>
+                <input id="set-pad-deadzone" type="range" min="0.04" max="0.35" step="0.02" value="0.12" />
+              </div>
+              <div class="setting-row">
+                <div class="setting-row-header"><span>Assistência de Mira (Aim Assist)</span><span id="val-pad-assist">0.65</span></div>
+                <input id="set-pad-assist" type="range" min="0" max="1.0" step="0.05" value="0.65" />
+              </div>
+              <div style="font-size:12px;color:#8b9bb4;line-height:1.4;">
+                <b>Mapeamento do Controle:</b> RT: Atirar | LT: Mirar | A/X: Pular | B/O: Agachar | X/Quadrado: Recarregar/Interagir | LB/RB/D-Up: Poderes Q/E/C | Y/Triângulo: Ultimate X.
+              </div>
+            </div>
+
+            <div class="settings-group">
+              <h3>🎨 GRÁFICOS ANIME & ÁUDIO</h3>
+              <div class="setting-row">
+                <div class="setting-row-header"><span>Campo de Visão (FOV)</span><span id="val-fov">90</span></div>
+                <input id="set-fov" type="range" min="65" max="115" step="1" value="90" />
+              </div>
+              <div class="setting-row">
+                <div class="setting-row-header"><span>Volume Principal</span><span id="val-master-vol">0.75</span></div>
+                <input id="set-master-vol" type="range" min="0" max="1.0" step="0.05" value="0.75" />
+              </div>
+              <label style="font-size:13.5px;margin-top:6px;"><input id="set-anime-outlines" type="checkbox" checked /> Contornos Cel-Shading Anime 3D</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ======================== IN-GAME TACTICAL HUD ======================== -->
+  <div id="ingame-hud" class="hidden">
+    <!-- Live Custom Crosshair Canvas -->
+    <canvas id="hud-crosshair-canvas" width="160" height="160"></canvas>
+
+    <!-- Top-Left Minimap & Telemetry -->
+    <div class="hud-top-left">
+      <canvas id="minimap-canvas" width="175" height="175"></canvas>
+      <div id="hud-telemetry" class="hud-telemetry">FPS: 60 | MAPA: NEO-SHIBUYA</div>
+    </div>
+
+    <!-- Top-Center Match Score & Round Clock -->
+    <div class="hud-top-matchbar">
+      <div class="team-score-block alpha">
+        <span class="t-name">ALFA</span>
+        <span id="hud-score-alpha" class="t-score">0</span>
+      </div>
+      <div class="round-timer-box">
+        <div id="hud-round-label" class="round-phase-label">RODADA 1</div>
+        <div id="hud-round-clock" class="round-clock">1:40</div>
+      </div>
+      <div class="team-score-block omega">
+        <span id="hud-score-omega" class="t-score">0</span>
+        <span class="t-name">OMEGA</span>
+      </div>
+    </div>
+
+    <!-- Top-Right Killfeed -->
+    <div id="hud-killfeed"></div>
+
+    <!-- Left Objective Tracker -->
+    <div id="hud-objective-box"></div>
+
+    <!-- Center Announcements -->
+    <div id="hud-center-announcement"></div>
+
+    <!-- Spike / Terminal Interaction Progress Bar -->
+    <div id="hud-interaction-bar" class="hidden">
+      <div id="interaction-label" style="font-family:var(--font-display);font-size:12px;color:#ffd166;font-weight:700;">SEGURE [F] PARA INTERAGIR</div>
+      <div class="interaction-progress-track">
+        <div id="interaction-progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- Bottom-Left Health, Shield & Hero Avatar -->
+    <div class="hud-bottom-left">
+      <div id="hud-hero-avatar" class="hud-hero-avatar">AK</div>
+      <div class="hud-vitals-bars">
+        <div class="vitals-numbers">
+          <span id="hud-hp-num">100</span>
+          <span id="hud-shield-num">🛡️ 50</span>
+        </div>
+        <div class="bar-track"><div id="hud-hp-bar"></div></div>
+        <div class="bar-track" style="height:6px;"><div id="hud-shield-bar"></div></div>
+      </div>
+    </div>
+
+    <!-- Bottom-Center Hero Abilities (Q, E, C, X) -->
+    <div class="hud-bottom-center">
+      <div id="hud-ab-q" class="hud-ability-slot">
+        <span class="ab-key">Q / LB</span>
+        <span id="hud-ab-q-name" class="ab-name">Habilidade 1</span>
+        <span id="hud-ab-q-cd" class="ab-cd">PRONTO</span>
+      </div>
+      <div id="hud-ab-e" class="hud-ability-slot">
+        <span class="ab-key">E / RB</span>
+        <span id="hud-ab-e-name" class="ab-name">Habilidade 2</span>
+        <span id="hud-ab-e-cd" class="ab-cd">PRONTO</span>
+      </div>
+      <div id="hud-ab-c" class="hud-ability-slot">
+        <span class="ab-key">C / D-UP</span>
+        <span id="hud-ab-c-name" class="ab-name">Habilidade 3</span>
+        <span id="hud-ab-c-cd" class="ab-cd">PRONTO</span>
+      </div>
+      <div id="hud-ab-x" class="hud-ability-slot ult">
+        <span class="ab-key">X / Y-ULT</span>
+        <span id="hud-ab-x-name" class="ab-name">ULTIMATE</span>
+        <span id="hud-ab-x-cd" class="ab-cd">100%</span>
+      </div>
+    </div>
+
+    <!-- Bottom-Right Weapon, Ammo & Credits -->
+    <div class="hud-bottom-right">
+      <div id="hud-credits" class="hud-credits-pill">¤ 1600</div>
+      <div class="hud-weapon-box">
+        <div id="hud-weapon-name">KURO-BLADE RIFLE</div>
+        <div class="hud-ammo-row">
+          <span id="hud-ammo-cur">30</span>
+          <span id="hud-ammo-res" class="reserve">/ 120</span>
+        </div>
+      </div>
+      <div class="hud-controls-hint">[B] Loja | [F] Plantar/Hackear | [TAB] Placar | [ESC] Menu/Mira</div>
+    </div>
+  </div>
+
+  <!-- Visual Novel Dialogue Overlay (Campaign & Tutorial) -->
+  <div id="vn-dialogue-overlay" class="hidden">
+    <div id="vn-portrait-initials" class="vn-portrait">CR</div>
+    <div class="vn-text-body">
+      <div id="vn-speaker-name" class="vn-speaker">COMANDANTE REI</div>
+      <div id="vn-message-text" class="vn-message">Bem-vindo ao setor de operações!</div>
+    </div>
+  </div>
+
+  <!-- Buy Menu Modal ([B] Key) -->
+  <div id="buy-menu-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="panel-header-row">
+        <div>
+          <h2>ARSENAL TÁTICO AEGIS — LOJA DE EQUIPAMENTOS</h2>
+          <div id="buy-credits-display" style="color:#ffd166;font-family:var(--font-display);font-size:15px;margin-top:4px;">CRÉDITOS DISPONÍVEIS: ¤ 1600</div>
+        </div>
+        <button class="btn-anime" onclick="window.GAME.toggleBuyMenu()">FECHAR [B]</button>
+      </div>
+      <div id="buy-items-grid" class="buy-grid"></div>
+    </div>
+  </div>
+
+  <!-- Scoreboard Modal ([TAB] Key) -->
+  <div id="scoreboard-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="panel-header-row">
+        <h2>PLACAR TÁTICO 5v5</h2>
+        <span style="color:#8b9bb4;font-size:13px;">Solte [TAB] para fechar</span>
+      </div>
+      <table class="scoreboard-table">
+        <thead>
+          <tr>
+            <th>ESQUADRÃO</th>
+            <th>AGENTE</th>
+            <th>HERÓI</th>
+            <th>ABATES (K)</th>
+            <th>MORTES (D)</th>
+            <th>CRÉDITOS</th>
+          </tr>
+        </thead>
+        <tbody id="scoreboard-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pause Menu Modal ([ESC] Key) -->
+  <div id="pause-menu-modal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width:520px;text-align:center;">
+      <h2 style="font-family:var(--font-display);margin-bottom:16px;">OPERAÇÃO PAUSADA</h2>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <button class="btn-anime green" onclick="window.GAME.resumeGame()">CONTINUAR COMBATE</button>
+        <button class="btn-anime secondary" onclick="window.GAME.toggleBuyMenu(); document.getElementById('pause-menu-modal').classList.add('hidden');">ABRIR LOJA DE ARMAS [B]</button>
+        <button class="btn-anime secondary" onclick="window.GAME.launchCampaignChapter((window.GAME.currentChapterIndex + 1) % 5)">PRÓXIMO MAPA / CAPÍTULO DA CAMPANHA</button>
+        <button class="btn-anime" onclick="window.GAME.returnToMainMenu()">VOLTAR AO MENU PRINCIPAL (MIRA & CONFIG)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/models.js"></script>
+  <script src="js/CrosshairSettings.js"></script>
+  <script src="js/network.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
