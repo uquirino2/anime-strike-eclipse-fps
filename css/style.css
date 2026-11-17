@@ -171,9 +171,11 @@ html, body {
 /* Top Navigation Bar in Main Menu */
 .menu-topbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 36px;
+  gap: 12px;
+  padding: 14px 24px;
   background: linear-gradient(90deg, rgba(10, 14, 28, 0.95), rgba(16, 22, 44, 0.85));
   border-bottom: 2px solid rgba(5, 213, 250, 0.35);
   box-shadow: 0 4px 25px rgba(0, 0, 0, 0.6);

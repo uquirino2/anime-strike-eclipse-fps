@@ -222,11 +222,21 @@ class AnimeStrikeGame {
 
     window.addEventListener('mousemove', (e) => {
       if (this.state !== 'PLAYING' || !this.player.alive) return;
-      if (!this.isPointerLocked && !this.mouseDown && !this.rightMouseDown) return;
+      if (!document.getElementById('buy-menu-modal').classList.contains('hidden')) return;
+      let dx = e.movementX || 0;
+      let dy = e.movementY || 0;
+      if (!this.isPointerLocked) {
+        if (this.lastMouseX !== undefined && this.lastMouseY !== undefined) {
+          dx = e.clientX - this.lastMouseX;
+          dy = e.clientY - this.lastMouseY;
+        }
+        this.lastMouseX = e.clientX;
+        this.lastMouseY = e.clientY;
+      }
       const cfg = window.SETTINGS.config;
-      const sensMult = (this.player.ads ? cfg.adsSens : 1.0) * cfg.mouseSens * 0.0022;
-      this.player.yaw -= e.movementX * sensMult;
-      const pitchDelta = e.movementY * sensMult * (cfg.invertY ? -1 : 1);
+      const sensMult = (this.player.ads ? cfg.adsSens : 1.0) * cfg.mouseSens * 0.0025;
+      this.player.yaw -= dx * sensMult;
+      const pitchDelta = dy * sensMult * (cfg.invertY ? -1 : 1);
       this.player.pitch = Math.max(-1.48, Math.min(1.48, this.player.pitch - pitchDelta));
     });
 
@@ -235,6 +245,9 @@ class AnimeStrikeGame {
       // Ignore clicks on open modals or UI buttons
       if (!document.getElementById('buy-menu-modal').classList.contains('hidden')) return;
       if (e.target && e.target.closest && e.target.closest('button, input, select, .modal-card, .mode-card')) return;
+
+      this.lastMouseX = e.clientX;
+      this.lastMouseY = e.clientY;
 
       if (!this.isPointerLocked) {
         this.requestLock();
@@ -265,7 +278,10 @@ class AnimeStrikeGame {
 
   requestLock() {
     try {
-      this.renderer.domElement.requestPointerLock();
+      const p = this.renderer.domElement.requestPointerLock();
+      if (p && typeof p.catch === 'function') {
+        p.catch(() => {});
+      }
     } catch (e) {}
   }
 
