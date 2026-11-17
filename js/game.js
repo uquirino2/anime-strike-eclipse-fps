@@ -139,7 +139,12 @@ class AnimeStrikeGame {
     if (this.menuShowcaseGroup) {
       this.scene.remove(this.menuShowcaseGroup);
     }
+    this.scene.background = new THREE.Color('#090d1e');
     this.menuShowcaseGroup = new THREE.Group();
+
+    const showcaseLight = new THREE.PointLight('#ffffff', 1.6, 15);
+    showcaseLight.position.set(1.2, 1.8, -1.2);
+    this.menuShowcaseGroup.add(showcaseLight);
 
     // Glowing Anime Pedestal
     const pedGeo = new THREE.CylinderGeometry(1.4, 1.7, 0.25, 24);
@@ -216,7 +221,8 @@ class AnimeStrikeGame {
     });
 
     window.addEventListener('mousemove', (e) => {
-      if (this.state !== 'PLAYING' || !this.isPointerLocked || !this.player.alive) return;
+      if (this.state !== 'PLAYING' || !this.player.alive) return;
+      if (!this.isPointerLocked && !this.mouseDown && !this.rightMouseDown) return;
       const cfg = window.SETTINGS.config;
       const sensMult = (this.player.ads ? cfg.adsSens : 1.0) * cfg.mouseSens * 0.0022;
       this.player.yaw -= e.movementX * sensMult;
@@ -226,12 +232,12 @@ class AnimeStrikeGame {
 
     window.addEventListener('mousedown', (e) => {
       if (this.state !== 'PLAYING') return;
-      // Ignore clicks on open modals
+      // Ignore clicks on open modals or UI buttons
       if (!document.getElementById('buy-menu-modal').classList.contains('hidden')) return;
+      if (e.target && e.target.closest && e.target.closest('button, input, select, .modal-card, .mode-card')) return;
 
       if (!this.isPointerLocked) {
         this.requestLock();
-        return;
       }
       if (e.button === 0) {
         this.mouseDown = true;
