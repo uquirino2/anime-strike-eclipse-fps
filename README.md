@@ -1,5 +1,7 @@
 # 🎮 ANIME STRIKE: ECLIPSE PROTOCOL (3D Tactical Hero FPS)
 
+🚀 **Jogue Online Agora (GitHub Pages):** https://uquirino2.github.io/anime-strike-eclipse-fps/
+
 Um jogo **FPS 3D com estética Anime Cel-Shading**, inspirado em **Valorant**, **Overwatch** e **Counter-Strike 2 (CS2)**, desenvolvido em **Three.js + WebRTC (PeerJS) + WebAudio API + Gamepad API**.
 
 ---
